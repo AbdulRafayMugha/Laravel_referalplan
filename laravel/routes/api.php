@@ -55,21 +55,36 @@ Route::prefix('commission')->middleware('auth:sanctum')->group(function () {
     Route::get('', [\App\Http\Controllers\CommissionController::class, 'list']);
     Route::get('stats', [\App\Http\Controllers\CommissionController::class, 'stats']);
     Route::put('{id}/status', [\App\Http\Controllers\CommissionController::class, 'updateStatus']);
+    Route::get('levels', [\App\Http\Controllers\CommissionController::class, 'levels']);
+    Route::get('settings', [\App\Http\Controllers\CommissionController::class, 'settings']);
 });
 
 // Coordinator
 Route::prefix('coordinator')->middleware(['auth:sanctum','role:coordinator,admin'])->group(function () {
+    Route::get('dashboard', function (\Illuminate\Http\Request $request) {
+        // Reuse stats method to power dashboard
+        $controller = app(\App\Http\Controllers\CoordinatorController::class);
+        $stats = $controller->stats($request)->getData(true);
+        return response()->json(['stats' => $stats]);
+    });
     Route::get('affiliates', [\App\Http\Controllers\CoordinatorController::class, 'listAffiliates']);
     Route::post('affiliates/{affiliateId}/assign', [\App\Http\Controllers\CoordinatorController::class, 'assign']);
     Route::post('affiliates/{affiliateId}/remove', [\App\Http\Controllers\CoordinatorController::class, 'remove']);
     Route::get('stats', [\App\Http\Controllers\CoordinatorController::class, 'stats']);
     Route::get('referrals', [\App\Http\Controllers\CoordinatorController::class, 'referrals']);
+    Route::post('affiliates/register', [\App\Http\Controllers\CoordinatorController::class, 'registerAffiliate']);
 });
 
 // Admin
 Route::prefix('admin')->middleware(['auth:sanctum','role:admin'])->group(function () {
+    Route::get('dashboard', [\App\Http\Controllers\AdminController::class, 'dashboard']);
+    Route::get('analytics', [\App\Http\Controllers\AdminController::class, 'analytics']);
+    Route::get('top-affiliates', [\App\Http\Controllers\AdminController::class, 'topAffiliates']);
     Route::get('affiliates', [\App\Http\Controllers\AdminController::class, 'affiliates']);
     Route::get('coordinators', [\App\Http\Controllers\AdminController::class, 'coordinators']);
+    Route::get('coordinators/{id}/network', [\App\Http\Controllers\AdminController::class, 'coordinatorNetwork']);
+    Route::patch('coordinators/{id}/status', [\App\Http\Controllers\AdminController::class, 'updateCoordinatorStatus']);
+    Route::get('coordinator-report', [\App\Http\Controllers\AdminController::class, 'exportCoordinatorReport']);
     Route::get('transactions', [\App\Http\Controllers\AdminController::class, 'transactions']);
     Route::get('commissions/pending', [\App\Http\Controllers\AdminController::class, 'pendingCommissions']);
     Route::put('commissions/{id}/status', [\App\Http\Controllers\AdminController::class, 'updateCommissionStatus']);

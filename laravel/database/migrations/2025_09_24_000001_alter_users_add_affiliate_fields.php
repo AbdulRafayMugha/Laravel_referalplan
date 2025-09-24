@@ -15,6 +15,7 @@ return new class extends Migration
             $table->string('referral_code', 32)->unique()->after('role');
             $table->boolean('is_active')->default(true)->after('email_verified_at');
             $table->boolean('email_verified')->default(false)->after('is_active');
+            $table->boolean('is_super_coordinator')->default(false)->after('coordinator_id');
             $table->string('email_verification_token', 191)->nullable()->after('email_verified');
             $table->timestamp('email_verification_expires')->nullable()->after('email_verification_token');
             $table->string('password_reset_token', 191)->nullable()->after('email_verification_expires');
@@ -36,6 +37,7 @@ return new class extends Migration
             $table->dropColumn([
                 'referrer_id',
                 'coordinator_id',
+                'is_super_coordinator',
                 'role',
                 'referral_code',
                 'is_active',

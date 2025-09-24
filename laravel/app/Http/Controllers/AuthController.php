@@ -51,6 +51,12 @@ class AuthController extends Controller
             }
         } elseif (!empty($data['coordinator_id'])) {
             $user->coordinator_id = $data['coordinator_id'];
+        } else {
+            // No referrer/coordinator provided: auto-assign super coordinator if exists
+            $super = User::where('role', 'coordinator')->where('is_super_coordinator', true)->first();
+            if ($super) {
+                $user->coordinator_id = $super->id;
+            }
         }
 
         // email verification token

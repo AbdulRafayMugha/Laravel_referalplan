@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Commission;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CommissionController extends Controller
 {
@@ -49,6 +50,31 @@ class CommissionController extends Controller
         $c->paid_at = $data['status'] === 'paid' ? now() : null;
         $c->save();
         return response()->json($c);
+    }
+
+    // PUBLIC/ADMIN helpers used by frontend service
+    public function levels()
+    {
+        // If there is a commission_levels table, return its contents; otherwise default
+        if (DB::getSchemaBuilder()->hasTable('commission_levels')) {
+            $levels = DB::table('commission_levels')->orderBy('level')->get();
+            return response()->json($levels);
+        }
+        return response()->json([
+            ['level' => 1, 'rate' => 15],
+            ['level' => 2, 'rate' => 5],
+            ['level' => 3, 'rate' => 2.5],
+        ]);
+    }
+
+    public function settings()
+    {
+        // Placeholder settings that UI expects
+        return response()->json([
+            'minimumPayout' => 50,
+            'payoutSchedule' => 'monthly',
+            'currency' => 'USD',
+        ]);
     }
 }
 

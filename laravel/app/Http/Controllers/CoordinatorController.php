@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Commission;
+use App\Models\AffiliateLink;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class CoordinatorController extends Controller
 {
@@ -52,11 +55,12 @@ class CoordinatorController extends Controller
         })->count();
 
         return response()->json([
-            'total_affiliates' => $totalAffiliates,
-            'active_affiliates' => $activeAffiliates,
-            'total_commissions' => $totalCommissions,
-            'pending_commissions' => $pendingCommissions,
-            'total_referrals' => $totalReferrals,
+            // Use camelCase keys to match frontend UI expectations
+            'totalAffiliates' => (int) $totalAffiliates,
+            'activeAffiliates' => (int) $activeAffiliates,
+            'totalCommissions' => (float) $totalCommissions,
+            'pendingCommissions' => (float) $pendingCommissions,
+            'totalReferrals' => (int) $totalReferrals,
         ]);
     }
 
@@ -70,6 +74,44 @@ class CoordinatorController extends Controller
             ->orderByDesc('created_at')
             ->paginate(20);
         return response()->json($referrals);
+    }
+
+    public function registerAffiliate(Request $request)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:6',
+        ]);
+
+        // generate unique referral code
+        do {
+            $referral = strtoupper(Str::random(8));
+        } while (User::where('referral_code', $referral)->exists());
+
+        $coordinator = $request->user();
+
+        $user = new User();
+        $user->name = $data['name'];
+        $user->email = $data['email'];
+        $user->password = Hash::make($data['password']);
+        $user->role = 'affiliate';
+        $user->referral_code = $referral;
+        $user->is_active = true;
+        $user->referrer_id = $coordinator->id;
+        $user->coordinator_id = $coordinator->id;
+        $user->email_verified = true;
+        $user->email_verified_at = now();
+        $user->save();
+
+        AffiliateLink::create([
+            'affiliate_id' => $user->id,
+            'link_code' => $user->referral_code,
+        ]);
+
+        return response()->json([
+            'user' => $user,
+        ], 201);
     }
 }
 
